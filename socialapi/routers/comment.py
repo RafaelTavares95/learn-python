@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.post("/comment", response_model=Comment, status_code=201)
 async def create_comment(comment: CommentIn):
-    if not find_post_by_id(comment.post_id):
+    if not await find_post_by_id(comment.post_id):
         raise HTTPException(status_code=404, detail="Post not found")
 
-    return add_comment(comment)
+    return await add_comment(comment)

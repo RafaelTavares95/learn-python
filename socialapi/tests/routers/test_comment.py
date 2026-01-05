@@ -5,7 +5,7 @@ from httpx import AsyncClient
 @pytest.mark.anyio
 async def test_create_comment(async_client: AsyncClient, created_post: dict):
     body = "First Comment"
-    expected_response = {"id": 0, "body": body, "post_id": created_post["id"]}
+    expected_response = {"id": 1, "body": body, "post_id": created_post["id"]}
 
     response = await async_client.post(
         "/comment", json={"body": body, "post_id": created_post["id"]}
@@ -21,6 +21,6 @@ async def test_create_comment_for_unexisted_post(
 ):
     body = "First Comment"
 
-    response = await async_client.post("/comment", json={"body": body, "post_id": 1})
+    response = await async_client.post("/comment", json={"body": body, "post_id": 123})
 
     assert response.status_code == 404

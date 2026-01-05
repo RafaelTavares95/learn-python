@@ -1,12 +1,14 @@
+import os
 from typing import AsyncGenerator, Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
+os.environ["ENV_STATE"] = "test"
+
+from socialapi.database import database, engine, metadata
 from socialapi.main import app
-from socialapi.service.comment import comment_table
-from socialapi.service.post import post_table
 
 # Using fixture we can create a setup for our tests and prepare functions to be injected by pytest
 
@@ -26,9 +28,11 @@ def client() -> Generator:
 # Clears the data whenever tests have been run.
 @pytest.fixture(autouse=True)
 async def db() -> AsyncGenerator:
-    post_table.clear()
-    comment_table.clear()
+    await database.connect()
+    metadata.drop_all(engine)
+    metadata.create_all(engine)
     yield
+    await database.disconnect()
 
 
 # Create a async client

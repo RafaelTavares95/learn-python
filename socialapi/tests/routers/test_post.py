@@ -5,7 +5,7 @@ from httpx import AsyncClient
 @pytest.mark.anyio
 async def test_create_post(async_client: AsyncClient):
     body = "First Post"
-    expected_response = {"id": 0, "body": body}
+    expected_response = {"id": 1, "body": body}
 
     response = await async_client.post("/post", json={"body": body})
 
@@ -43,7 +43,7 @@ async def test_get_post(
 async def test_get_post_with_unexistent_id(
     async_client: AsyncClient, created_post: dict
 ):
-    id = 1
+    id = 123
     response = await async_client.get(f"/post/{id}")
 
     assert response.status_code == 404
@@ -52,7 +52,7 @@ async def test_get_post_with_unexistent_id(
 
 @pytest.mark.anyio
 async def test_list_post_comments(async_client: AsyncClient, created_comment: dict):
-    id = 0
+    id = 1
     response = await async_client.get(f"/post/{id}/comment")
 
     assert response.status_code == 200
@@ -63,7 +63,7 @@ async def test_list_post_comments(async_client: AsyncClient, created_comment: di
 async def test_list_post_comments_with_unexistent_postid(
     async_client: AsyncClient, created_post: dict, created_comment: dict
 ):
-    id = 1
+    id = 123
     response = await async_client.get(f"/post/{id}/comment")
 
     assert response.status_code == 404

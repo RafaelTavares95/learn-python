@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from socialapi.databese import database
+from socialapi.database import database
 from socialapi.routers.comment import router as comment_router
 from socialapi.routers.post import router as post_router
 
