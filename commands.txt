@@ -1,0 +1,30 @@
+Create env
+- py -m venv .venv  
+
+Activate env
+- Inside ./venv/Scripts
+- Excute activate.bat
+
+Install requiriments (Create requirements.txt before)
+- pip install -r .\requirements.txt
+
+Run app
+- uvicorn socialapi.main:app --reload
+
+If app are not responsive, maybe the port is alread in use and you need to run this commands
+- netstat -ano | findstr :8000
+- taskkill /PID XXXX /F
+
+Or you can define another port
+- python -m uvicorn social-app.main:app --port 8001
+
+Run tests
+
+- pytest
+
+We can use -s to see prints inside the test:
+- pytest -s
+
+Run coverage 
+
+- pytest --cov=socialapi --cov-report=html
