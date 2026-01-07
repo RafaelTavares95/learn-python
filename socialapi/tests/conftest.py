@@ -7,7 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 os.environ["ENV_STATE"] = "test"
 
-from socialapi.database import database, engine, metadata
+from socialapi.core.database import database, engine, metadata
 from socialapi.main import app
 
 # Using fixture we can create a setup for our tests and prepare functions to be injected by pytest

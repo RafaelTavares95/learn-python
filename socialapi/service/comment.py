@@ -1,6 +1,6 @@
 import logging
 
-from socialapi.database import comment_table, database
+from socialapi.core.database import comment_table, database
 from socialapi.models.comment import CommentIn
 
 logger = logging.getLogger(__name__)

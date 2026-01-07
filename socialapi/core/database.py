@@ -1,7 +1,7 @@
 import databases
 import sqlalchemy
 
-from socialapi.config import config
+from socialapi.core.config import config
 
 metadata = sqlalchemy.MetaData()
 
