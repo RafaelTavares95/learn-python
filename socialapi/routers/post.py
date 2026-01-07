@@ -24,15 +24,17 @@ async def list_all_posts():
 @router.get("/post/{post_id}", response_model=UserPostWithComments)
 async def get_full_post(post_id: int):
     if not await find_post_by_id(post_id):
-        logger.error(f"Post with id: {post_id} not found")
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise HTTPException(
+            status_code=404, detail=f"Post with id: {post_id} not found"
+        )
     return await get_post(post_id)
 
 
 @router.get("/post/{post_id}/comment", response_model=list[Comment])
 async def list_post_comments(post_id: int):
     if not await find_post_by_id(post_id):
-        logger.error(f"Post with id: {post_id} not found")
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise HTTPException(
+            status_code=404, detail=f"Post with id: {post_id} not found"
+        )
 
     return await find_comments_by_post_id(post_id)
