@@ -1,7 +1,7 @@
 import logging
 from logging.config import dictConfig
 
-from socialapi.core.config import DevConfig, config
+from socialapi.core.config import DevConfig, ProdConfig, config
 
 
 def obfuscate_email(email: str, visible_length: int) -> str:
@@ -33,6 +33,11 @@ class ExtraInfoFilter(logging.Filter):
         return True
 
 
+handlers = ["default", "timed_rotating_file"]
+if isinstance(config, ProdConfig):
+    handlers.append("logtail")
+
+
 def configure_logging() -> None:
     dictConfig(
         {
@@ -59,7 +64,7 @@ def configure_logging() -> None:
                 "file": {
                     "class": "logging.Formatter",
                     "datefmt": "%Y-%m-%dT%H:%M:%S",
-                    "format": "%(asctime)s.%(msecs)03dZ | %(levelname)-8s | [%(correlation_id)s] | %(name)s(%(funcName)s):%(lineno)d - %(message)s - %(received_data)s",
+                    "format": "%(asctime)s.%(msecs)03dZ | %(levelname)-8s | [%(correlation_id)s] | %(name)s(%(funcName)s):%(lineno)d - %(message)s - ",
                 },
                 "json": {
                     "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
@@ -85,23 +90,31 @@ def configure_logging() -> None:
                     "utc": True,
                     "filters": ["correlation_id", "pii_obfuscation", "extra_data"],
                 },
+                "logtail": {
+                    "class": "logtail.LogtailHandler",
+                    "level": "DEBUG",
+                    "formatter": "console",
+                    "filters": ["correlation_id", "pii_obfuscation", "extra_data"],
+                    "source_token": config.LOGTAIL_API_KEY,
+                    "host": config.LOGTAIL_HOST,
+                },
             },
             "loggers": {
                 "socialapi": {
-                    "handlers": ["default", "timed_rotating_file"],
+                    "handlers": handlers,
                     "level": "DEBUG" if isinstance(config, DevConfig) else "INFO",
                     "propagate": False,
                 },
                 "uvicorn": {
-                    "handlers": ["default", "timed_rotating_file"],
+                    "handlers": handlers,
                     "level": "INFO",
                 },
                 "databases": {
-                    "handlers": ["default", "timed_rotating_file"],
+                    "handlers": handlers,
                     "level": "WARNING",
                 },
                 "aiosqlite": {
-                    "handlers": ["default", "timed_rotating_file"],
+                    "handlers": handlers,
                     "level": "WARNING",
                 },
             },
