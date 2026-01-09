@@ -56,6 +56,13 @@ async def create_comment(body: str, post_id: int, ac: AsyncClient) -> dict:
     return response.json()
 
 
+async def create_user(name: str, email: str, password: str, ac: AsyncClient) -> dict:
+    response = await ac.post(
+        "/register", json={"name": name, "email": email, "password": password}
+    )
+    return response.json()
+
+
 @pytest.fixture()
 async def created_post(async_client: AsyncClient):
     return await create_post("First Post", async_client)
@@ -64,3 +71,8 @@ async def created_post(async_client: AsyncClient):
 @pytest.fixture()
 async def created_comment(async_client: AsyncClient, created_post: dict):
     return await create_comment("First Comment", created_post["id"], async_client)
+
+
+@pytest.fixture()
+async def created_user(async_client: AsyncClient):
+    return await create_user("test", "teste@email.com", "1234", async_client)

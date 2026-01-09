@@ -47,7 +47,7 @@ async def test_get_post_with_unexistent_id(
     response = await async_client.get(f"/post/{id}")
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Post not found"
+    assert response.json()["detail"] == f"Post with id: {id} not found"
 
 
 @pytest.mark.anyio
@@ -67,4 +67,4 @@ async def test_list_post_comments_with_unexistent_postid(
     response = await async_client.get(f"/post/{id}/comment")
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Post not found"
+    assert response.json()["detail"] == f"Post with id: {id} not found"
