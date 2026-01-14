@@ -10,3 +10,8 @@ class User(BaseModel):
 class UserIn(User):
     password: str
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
