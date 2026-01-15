@@ -10,3 +10,14 @@ class CredentialException(HTTPException):
         self.message = message
         self.status_code = status
         super().__init__(self.status_code, self.message)
+
+
+class UnauthorizedException(HTTPException):
+    def __init__(
+        self,
+        status: int = 401,
+        message: str = "Invalid access token.",
+    ):
+        self.message = message
+        self.status_code = status
+        super().__init__(self.status_code, self.message)

@@ -3,12 +3,16 @@ from httpx import AsyncClient
 
 
 @pytest.mark.anyio
-async def test_create_comment(async_client: AsyncClient, created_post: dict):
+async def test_create_comment(
+    async_client: AsyncClient, created_post: dict, logged_in_token: str
+):
     body = "First Comment"
     expected_response = {"id": 1, "body": body, "post_id": created_post["id"]}
 
     response = await async_client.post(
-        "/comment", json={"body": body, "post_id": created_post["id"]}
+        "/comment",
+        json={"body": body, "post_id": created_post["id"]},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
     )
 
     assert response.status_code == 201
@@ -17,10 +21,14 @@ async def test_create_comment(async_client: AsyncClient, created_post: dict):
 
 @pytest.mark.anyio
 async def test_create_comment_for_unexisted_post(
-    async_client: AsyncClient, created_post: dict
+    async_client: AsyncClient, created_post: dict, logged_in_token: str
 ):
     body = "First Comment"
 
-    response = await async_client.post("/comment", json={"body": body, "post_id": 123})
+    response = await async_client.post(
+        "/comment",
+        json={"body": body, "post_id": 123},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
 
     assert response.status_code == 404

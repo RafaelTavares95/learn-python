@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from passlib.context import CryptContext
 
@@ -11,6 +12,8 @@ logger = logging.getLogger(__name__)
 pwd_context = CryptContext(schemes=["bcrypt"])
 ALGORITHM = "HS256"
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 
 def create_access_token(email: str, expire_in_minutes: int) -> str:
     expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
@@ -18,6 +21,11 @@ def create_access_token(email: str, expire_in_minutes: int) -> str:
     )
     jwt_data = {"sub": email, "exp": expire}
     return jwt.encode(jwt_data, key=config.JWT_SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> str:
+    decoded = jwt.decode(token=token, key=config.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+    return decoded.get("sub")
 
 
 def get_password_hash(pwd: str) -> str:
