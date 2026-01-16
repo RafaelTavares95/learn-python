@@ -56,5 +56,7 @@ async def get_user_from_token(token: str) -> User:
         if user is None:
             raise UnauthorizedException()
         return User(**user)
-    except ExpiredSignatureError or JWTError as e:
+    except ExpiredSignatureError as e:
+        raise UnauthorizedException() from e
+    except JWTError as e:
         raise UnauthorizedException() from e

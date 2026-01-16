@@ -18,6 +18,30 @@ async def test_create_post(async_client: AsyncClient, logged_in_token: str):
 
 
 @pytest.mark.anyio
+async def test_create_post_without_token(async_client: AsyncClient):
+    body = "First Post"
+
+    response = await async_client.post("/post", json={"body": body})
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+
+@pytest.mark.anyio
+async def test_create_post_invalid_token(async_client: AsyncClient):
+    body = "First Post"
+
+    response = await async_client.post(
+        "/post",
+        json={"body": body},
+        headers={"Authorization": "Bearer 1235"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid access token."
+
+
+@pytest.mark.anyio
 async def test_create_post_without_body(
     async_client: AsyncClient, logged_in_token: str
 ):
