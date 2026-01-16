@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
+from socialapi.core.security import create_access_token
+
 
 @pytest.mark.anyio
 async def test_create_post(async_client: AsyncClient, logged_in_token: str):
@@ -35,6 +37,20 @@ async def test_create_post_invalid_token(async_client: AsyncClient):
         "/post",
         json={"body": body},
         headers={"Authorization": "Bearer 1235"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid access token."
+
+
+@pytest.mark.anyio
+async def test_create_post_expired_token(async_client: AsyncClient, created_user: dict):
+    token = create_access_token("teste@email.com", expire_in_minutes=-1)
+    body = "First Post"
+    response = await async_client.post(
+        "/post",
+        json={"body": body},
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 401

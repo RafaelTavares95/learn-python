@@ -43,7 +43,7 @@ async def autenticate_user(email: str, password: str):
 
 async def user_login(user: UserLogin) -> TokenResponse:
     autenticated_user = await autenticate_user(user.email, user.password)
-    access_token = create_access_token(autenticated_user.email, 30)
+    access_token = create_access_token(autenticated_user.email)
     return TokenResponse(access_token=access_token, token_type="bearer")
 
 

@@ -11,11 +11,14 @@ logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"])
 ALGORITHM = "HS256"
+DEFAULT_EXPIRE_TIME = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
-def create_access_token(email: str, expire_in_minutes: int) -> str:
+def create_access_token(
+    email: str, expire_in_minutes: int = DEFAULT_EXPIRE_TIME
+) -> str:
     expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
         minutes=expire_in_minutes
     )
