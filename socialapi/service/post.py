@@ -2,14 +2,15 @@ import logging
 
 from socialapi.core.database import database, post_table
 from socialapi.models.post import UserPost, UserPostIn, UserPostWithComments
+from socialapi.models.user import User
 from socialapi.service.comment import find_comments_by_post_id
 
 logger = logging.getLogger(__name__)
 
 
-async def add_post(post: UserPostIn):
+async def add_post(post: UserPostIn, user: User):
     logger.info("Creating a new post")
-    data = post.model_dump()
+    data = {**post.model_dump(), "user_id": user.id}
     query = post_table.insert().values(data)
     id = await database.execute(query)
     logger.debug(f"Post created with id: {id}", extra={"received_data": data})

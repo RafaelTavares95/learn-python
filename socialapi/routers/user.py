@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 
 from socialapi.models.token import TokenResponse
 from socialapi.models.user import User, UserIn, UserLogin
@@ -18,5 +21,7 @@ async def register(user: UserIn):
 
 
 @router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
-async def login(user: UserLogin):
-    return await user_login(user)
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    return await user_login(
+        UserLogin(email=form_data.username, password=form_data.password)
+    )

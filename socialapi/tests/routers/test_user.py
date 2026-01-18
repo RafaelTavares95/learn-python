@@ -42,7 +42,8 @@ async def test_user_register_with_existing_email(
 async def test_user_login(async_client: AsyncClient, created_user: dict):
     response = await async_client.post(
         "/login",
-        json={"email": created_user["email"], "password": "1234"},
+        data={"username": created_user["email"], "password": "1234"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
 
     assert response.status_code == 200
@@ -52,7 +53,8 @@ async def test_user_login(async_client: AsyncClient, created_user: dict):
 async def test_user_login_fail(async_client: AsyncClient, created_user: dict):
     response = await async_client.post(
         "/login",
-        json={"email": created_user["email"], "password": "12345"},
+        data={"username": created_user["email"], "password": "12345"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
 
     assert response.status_code == 401

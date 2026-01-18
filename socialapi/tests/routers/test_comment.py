@@ -4,10 +4,18 @@ from httpx import AsyncClient
 
 @pytest.mark.anyio
 async def test_create_comment(
-    async_client: AsyncClient, created_post: dict, logged_in_token: str
+    async_client: AsyncClient,
+    created_post: dict,
+    created_user: dict,
+    logged_in_token: str,
 ):
     body = "First Comment"
-    expected_response = {"id": 1, "body": body, "post_id": created_post["id"]}
+    expected_response = {
+        "id": 1,
+        "body": body,
+        "post_id": created_post["id"],
+        "user_id": created_user["id"],
+    }
 
     response = await async_client.post(
         "/comment",

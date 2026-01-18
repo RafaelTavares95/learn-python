@@ -1,5 +1,7 @@
 import logging
+from typing import Annotated
 
+from fastapi import Depends
 from jose import ExpiredSignatureError, JWTError
 
 from socialapi.core.database import database, user_table
@@ -7,6 +9,7 @@ from socialapi.core.security import (
     create_access_token,
     decode_token,
     get_password_hash,
+    oauth2_scheme,
     verify_password,
 )
 from socialapi.exceptions.exceptions import CredentialException, UnauthorizedException
@@ -47,7 +50,7 @@ async def user_login(user: UserLogin) -> TokenResponse:
     return TokenResponse(access_token=access_token, token_type="bearer")
 
 
-async def get_user_from_token(token: str) -> User:
+async def get_user_from_token(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
     try:
         email = decode_token(token)
         if email is None:

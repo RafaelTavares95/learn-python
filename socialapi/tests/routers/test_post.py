@@ -5,9 +5,11 @@ from socialapi.core.security import create_access_token
 
 
 @pytest.mark.anyio
-async def test_create_post(async_client: AsyncClient, logged_in_token: str):
+async def test_create_post(
+    async_client: AsyncClient, created_user: dict, logged_in_token: str
+):
     body = "First Post"
-    expected_response = {"id": 1, "body": body}
+    expected_response = {"id": 1, "body": body, "user_id": created_user["id"]}
 
     response = await async_client.post(
         "/post",

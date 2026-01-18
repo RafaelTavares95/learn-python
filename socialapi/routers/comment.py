@@ -1,8 +1,8 @@
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
-from socialapi.core.security import oauth2_scheme
 from socialapi.models.comment import Comment, CommentIn
 from socialapi.models.user import User
 from socialapi.service.comment import add_comment
@@ -14,11 +14,12 @@ router = APIRouter()
 
 
 @router.post("/comment", response_model=Comment, status_code=201)
-async def create_comment(comment: CommentIn, request: Request):
-    current_user: User = await get_user_from_token(await oauth2_scheme(request))
+async def create_comment(
+    comment: CommentIn, current_user: Annotated[User, Depends(get_user_from_token)]
+):
     if not await find_post_by_id(comment.post_id):
         raise HTTPException(
             status_code=404, detail=f"Post with id: {comment.post_id} not found"
         )
 
-    return await add_comment(comment)
+    return await add_comment(comment, current_user)

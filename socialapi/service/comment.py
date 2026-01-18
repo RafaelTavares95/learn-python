@@ -2,13 +2,14 @@ import logging
 
 from socialapi.core.database import comment_table, database
 from socialapi.models.comment import CommentIn
+from socialapi.models.user import User
 
 logger = logging.getLogger(__name__)
 
 
-async def add_comment(comment: CommentIn):
+async def add_comment(comment: CommentIn, user: User):
     logger.info("Creating a new comment")
-    data = comment.model_dump()
+    data = {**comment.model_dump(), "user_id": user.id}
     query = comment_table.insert().values(data)
     id = await database.execute(query)
     logger.debug(f"Comment created with id: {id}")

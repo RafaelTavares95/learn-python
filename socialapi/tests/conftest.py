@@ -95,6 +95,8 @@ async def created_user(async_client: AsyncClient):
 @pytest.fixture()
 async def logged_in_token(async_client: AsyncClient, created_user) -> str:
     response = await async_client.post(
-        "/login", json={"email": "teste@email.com", "password": "1234"}
+        "/login",
+        data={"username": "teste@email.com", "password": "1234"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     return response.json()["access_token"]
