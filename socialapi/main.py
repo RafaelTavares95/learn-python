@@ -8,6 +8,7 @@ from fastapi.exception_handlers import http_exception_handler
 from socialapi.core.database import database
 from socialapi.core.logging_conf import configure_logging
 from socialapi.routers.comment import router as comment_router
+from socialapi.routers.like import router as like_router
 from socialapi.routers.post import router as post_router
 from socialapi.routers.user import router as user_router
 
@@ -28,6 +29,7 @@ app.add_middleware(CorrelationIdMiddleware)
 app.include_router(post_router)
 app.include_router(comment_router)
 app.include_router(user_router)
+app.include_router(like_router)
 
 
 @app.exception_handler(HTTPException)

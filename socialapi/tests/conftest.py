@@ -73,6 +73,15 @@ async def create_user(name: str, email: str, password: str, ac: AsyncClient) -> 
     return response.json()
 
 
+async def register_like(post_id: int, ac: AsyncClient, logged_in_token: str) -> dict:
+    response = await ac.post(
+        "/like",
+        json={"post_id": post_id},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+    return response.json()
+
+
 @pytest.fixture()
 async def created_post(async_client: AsyncClient, logged_in_token: str):
     return await create_post("First Post", async_client, logged_in_token)
@@ -100,3 +109,10 @@ async def logged_in_token(async_client: AsyncClient, created_user) -> str:
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     return response.json()["access_token"]
+
+
+@pytest.fixture()
+async def registred_like(
+    async_client: AsyncClient, created_post: dict, logged_in_token: str
+):
+    return await register_like(created_post["id"], async_client, logged_in_token)
