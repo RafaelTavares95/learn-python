@@ -14,7 +14,7 @@ from socialapi.core.security import (
 )
 from socialapi.exceptions.exceptions import CredentialException, UnauthorizedException
 from socialapi.models.token import TokenResponse
-from socialapi.models.user import User, UserIn, UserLogin
+from socialapi.models.user import User, UserIn, UserLogin, UserPatch
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,20 @@ async def create_user(user: UserIn):
     id = await database.execute(query)
     logger.debug(f"User created with id={id}", extra={"email": data["email"]})
     return User(id=id, name=data["name"], email=data["email"])
+
+
+async def update_user(user: UserPatch, current_user: User):
+    logger.info("Update user data")
+    data = user.model_dump()
+    if data["password"]:
+        data["password"] = get_password_hash(data["password"])
+    query = (
+        user_table.update()
+        .where(user_table.c.id == current_user.id)
+        .values({k: v for k, v in data.items() if v is not None})
+    )
+    id = await database.execute(query)
+    return User(id=id, name=data["name"], email=current_user.email)
 
 
 async def autenticate_user(email: str, password: str):

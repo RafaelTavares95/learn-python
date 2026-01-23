@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -15,3 +17,8 @@ class UserIn(User):
 class UserLogin(BaseModel):
     email: str
     password: str
+
+
+class UserPatch(BaseModel):
+    name: Optional[str]
+    password: Optional[str] = None
