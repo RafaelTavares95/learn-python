@@ -1,17 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 
-from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
-from socialapi.models.user import User, UserIn, UserLogin, UserPatch
+from socialapi.models.user import User, UserIn, UserPatch
 from socialapi.service.user import (
     create_user,
     find_user_by_email,
     get_user_from_token,
-    refresh_access_token,
     update_user,
-    user_login,
 )
 
 router = APIRouter()
@@ -25,20 +21,6 @@ async def register(user: UserIn):
             detail="User with this email already exists",
         )
     return await create_user(user)
-
-
-@router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    return await user_login(
-        UserLogin(email=form_data.username, password=form_data.password)
-    )
-
-
-@router.post(
-    "/refresh", response_model=AccessTokenResponse, status_code=status.HTTP_200_OK
-)
-async def refresh(refresh: RefreshRequest):
-    return await refresh_access_token(refresh)
 
 
 @router.get("/user")

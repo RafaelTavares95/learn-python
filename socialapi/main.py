@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from socialapi.core.database import database
 from socialapi.core.logging_conf import configure_logging
+from socialapi.routers.auth import router as auth_router
 from socialapi.routers.comment import router as comment_router
 from socialapi.routers.like import router as like_router
 from socialapi.routers.post import router as post_router
@@ -38,6 +39,7 @@ app.include_router(post_router)
 app.include_router(comment_router)
 app.include_router(user_router)
 app.include_router(like_router)
+app.include_router(auth_router)
 
 
 @app.exception_handler(HTTPException)

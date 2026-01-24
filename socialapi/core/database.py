@@ -39,6 +39,13 @@ like_table = sqlalchemy.Table(
     sqlalchemy.Column("user_id", sqlalchemy.ForeignKey("users.id"), nullable=False),
 )
 
+revoked_token_table = sqlalchemy.Table(
+    "revoked_tokens",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("token", sqlalchemy.String, unique=True, index=True),
+)
+
 
 engine = sqlalchemy.create_engine(
     config.DATABASE_URL, connect_args={"check_same_thread": False}
