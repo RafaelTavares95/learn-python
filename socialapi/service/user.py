@@ -39,16 +39,22 @@ async def create_user(user: UserIn):
 
 async def update_user(user: UserPatch, current_user: User):
     logger.info("Update user data")
-    data = user.model_dump()
-    if data["password"]:
+    data = user.model_dump(exclude_unset=True)
+    if "password" in data and data["password"]:
         data["password"] = get_password_hash(data["password"])
-    query = (
-        user_table.update()
-        .where(user_table.c.id == current_user.id)
-        .values({k: v for k, v in data.items() if v is not None})
+
+    if data:
+        query = (
+            user_table.update().where(user_table.c.id == current_user.id).values(data)
+        )
+        await database.execute(query)
+
+    # Return updated user info
+    return User(
+        id=current_user.id,
+        name=data.get("name", current_user.name),
+        email=current_user.email,
     )
-    id = await database.execute(query)
-    return User(id=id, name=data["name"], email=current_user.email)
 
 
 async def autenticate_user(email: str, password: str):

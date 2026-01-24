@@ -20,5 +20,5 @@ class UserLogin(BaseModel):
 
 
 class UserPatch(BaseModel):
-    name: Optional[str]
+    name: Optional[str] = None
     password: Optional[str] = None
