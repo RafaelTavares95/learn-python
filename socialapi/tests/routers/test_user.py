@@ -47,6 +47,9 @@ async def test_user_login(async_client: AsyncClient, created_user: dict):
     )
 
     assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert "refresh_token" in response.json()
+    assert response.json()["token_type"] == "bearer"
 
 
 @pytest.mark.anyio
@@ -126,3 +129,34 @@ async def test_update_user_password(
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     assert login_response.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_refresh_token(async_client: AsyncClient, created_user: dict):
+    # Login to get refresh token
+    login_response = await async_client.post(
+        "/login",
+        data={"username": created_user["email"], "password": "1234"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    refresh_token = login_response.json()["refresh_token"]
+
+    # Refresh access token
+    refresh_response = await async_client.post(
+        "/refresh",
+        json={"refresh_token": refresh_token},
+    )
+
+    assert refresh_response.status_code == 200
+    assert "access_token" in refresh_response.json()
+    assert refresh_response.json()["token_type"] == "bearer"
+
+
+@pytest.mark.anyio
+async def test_refresh_token_invalid(async_client: AsyncClient):
+    refresh_response = await async_client.post(
+        "/refresh",
+        json={"refresh_token": "invalid_token"},
+    )
+
+    assert refresh_response.status_code == 401

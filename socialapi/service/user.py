@@ -7,13 +7,14 @@ from jose import ExpiredSignatureError, JWTError
 from socialapi.core.database import database, user_table
 from socialapi.core.security import (
     create_access_token,
+    create_refresh_token,
     decode_token,
     get_password_hash,
     oauth2_scheme,
     verify_password,
 )
 from socialapi.exceptions.exceptions import CredentialException, UnauthorizedException
-from socialapi.models.token import TokenResponse
+from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
 from socialapi.models.user import User, UserIn, UserLogin, UserPatch
 
 logger = logging.getLogger(__name__)
@@ -67,7 +68,10 @@ async def autenticate_user(email: str, password: str):
 async def user_login(user: UserLogin) -> TokenResponse:
     autenticated_user = await autenticate_user(user.email, user.password)
     access_token = create_access_token(autenticated_user.email)
-    return TokenResponse(access_token=access_token, token_type="bearer")
+    refresh_token = create_refresh_token(autenticated_user.email)
+    return TokenResponse(
+        access_token=access_token, refresh_token=refresh_token, token_type="bearer"
+    )
 
 
 async def get_user_from_token(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
@@ -79,6 +83,22 @@ async def get_user_from_token(token: Annotated[str, Depends(oauth2_scheme)]) -> 
         if user is None:
             raise UnauthorizedException()
         return User(**user)
+    except ExpiredSignatureError as e:
+        raise UnauthorizedException() from e
+    except JWTError as e:
+        raise UnauthorizedException() from e
+
+
+async def refresh_access_token(refresh: RefreshRequest) -> AccessTokenResponse:
+    try:
+        email = decode_token(refresh.refresh_token)
+        if email is None:
+            raise UnauthorizedException()
+        user = await find_user_by_email(email)
+        if user is None:
+            raise UnauthorizedException()
+        access_token = create_access_token(user.email)
+        return AccessTokenResponse(access_token=access_token, token_type="bearer")
     except ExpiredSignatureError as e:
         raise UnauthorizedException() from e
     except JWTError as e:

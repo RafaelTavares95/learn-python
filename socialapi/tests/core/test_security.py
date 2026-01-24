@@ -1,3 +1,5 @@
+import datetime
+
 from jose import jwt
 
 from socialapi.core import security
@@ -36,3 +38,17 @@ def test_decode_token():
     token = create_access_token(email=email, expire_in_minutes=30)
     result = decode_token(token)
     assert result == email
+
+
+def test_create_refresh_token():
+    email = "teste@test.com"
+    token = security.create_refresh_token(email=email)
+    decoded = jwt.decode(
+        token=token, key=config.JWT_SECRET_KEY, algorithms=[security.ALGORITHM]
+    )
+    assert email == decoded.get("sub")
+    # Check expiration (roughly 7 days)
+    exp = decoded.get("exp")
+    now = datetime.datetime.now(datetime.UTC).timestamp()
+    assert exp > now + (6 * 24 * 60 * 60)
+    assert exp < now + (8 * 24 * 60 * 60)
