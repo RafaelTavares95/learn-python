@@ -20,6 +20,12 @@ post_table = sqlalchemy.Table(
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
     sqlalchemy.Column("body", sqlalchemy.String),
     sqlalchemy.Column("user_id", sqlalchemy.ForeignKey("users.id"), nullable=False),
+    sqlalchemy.Column(
+        "created_at",
+        sqlalchemy.DateTime,
+        server_default=sqlalchemy.func.now(),
+        nullable=False,
+    ),
 )
 
 comment_table = sqlalchemy.Table(

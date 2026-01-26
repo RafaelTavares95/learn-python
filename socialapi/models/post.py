@@ -13,6 +13,10 @@ class UserPost(UserPostIn):
     user_id: int
 
 
+class UserPostWithLikes(UserPost):
+    likes: int
+
+
 class UserPostWithComments(BaseModel):
-    post: UserPost
+    post: UserPostWithLikes
     comments: list[Comment]

@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from socialapi.models.comment import Comment
+from socialapi.models.enums.post_sorting import PostSorting
 from socialapi.models.post import UserPost, UserPostIn, UserPostWithComments
 from socialapi.models.user import User
 from socialapi.service.comment import find_comments_by_post_id
@@ -22,8 +23,11 @@ async def create_post(
 
 
 @router.get("/post", response_model=list[UserPost])
-async def list_all_posts(current_user: Annotated[User, Depends(get_user_from_token)]):
-    return await list_posts()
+async def list_all_posts(
+    sort: PostSorting,
+    current_user: Annotated[User, Depends(get_user_from_token)],
+):
+    return await list_posts(sort)
 
 
 @router.get("/post/{post_id}", response_model=UserPostWithComments)
