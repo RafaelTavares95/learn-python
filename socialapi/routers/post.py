@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from socialapi.models.comment import Comment
 from socialapi.models.enums.post_sorting import PostSorting
-from socialapi.models.post import UserPost, UserPostIn, UserPostWithComments
+from socialapi.models.post import (
+    UserPost,
+    UserPostIn,
+    UserPostWithComments,
+    UserPostWithLikes,
+)
 from socialapi.models.user import User
 from socialapi.service.comment import find_comments_by_post_id
 from socialapi.service.post import add_post, find_post_by_id, get_post, list_posts
@@ -22,7 +27,7 @@ async def create_post(
     return await add_post(post, current_user)
 
 
-@router.get("/post", response_model=list[UserPost])
+@router.get("/post", response_model=list[UserPostWithLikes])
 async def list_all_posts(
     sort: PostSorting,
     current_user: Annotated[User, Depends(get_user_from_token)],

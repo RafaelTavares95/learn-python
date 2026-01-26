@@ -47,13 +47,25 @@ async def list_posts(sort: PostSorting = PostSorting.NEWEST) -> list[UserPostWit
 
     match sort:
         case PostSorting.NEWEST:
-            query = post_likes_view.order_by(post_table.c.created_at.desc())
+            query = post_likes_view.order_by(
+                post_table.c.created_at.desc(), post_table.c.id.desc()
+            )
         case PostSorting.OLDEST:
-            query = post_likes_view.order_by(post_table.c.created_at.asc())
+            query = post_likes_view.order_by(
+                post_table.c.created_at.asc(), post_table.c.id.asc()
+            )
         case PostSorting.MOST_LIKED:
-            query = post_likes_view.order_by(sqlalchemy.desc("likes"))
+            query = post_likes_view.order_by(
+                sqlalchemy.literal_column("likes").desc(),
+                post_table.c.created_at.desc(),
+                post_table.c.id.desc(),
+            )
         case PostSorting.LEAST_LIKED:
-            query = post_likes_view.order_by(sqlalchemy.asc("likes"))
+            query = post_likes_view.order_by(
+                sqlalchemy.literal_column("likes").asc(),
+                post_table.c.created_at.desc(),
+                post_table.c.id.desc(),
+            )
 
     return await database.fetch_all(query)
 

@@ -71,31 +71,62 @@ async def test_create_post_without_body(
 
 
 @pytest.mark.anyio
-async def test_list_all_posts(
-    async_client: AsyncClient, created_post: dict, logged_in_token: str
+@pytest.mark.parametrize(
+    "sort_param, expected_order_idx",
+    [
+        ("newest", [2, 1, 0]),
+        ("oldest", [0, 1, 2]),
+        ("most_liked", [1, 2, 0]),
+        ("least_liked", [2, 0, 1]),
+    ],
+)
+async def test_list_all_posts_sorting(
+    async_client: AsyncClient,
+    created_post: dict,
+    logged_in_token: str,
+    sort_param: str,
+    expected_order_idx: list[int],
 ):
+    # Post 2
+    response = await async_client.post(
+        "/post",
+        json={"body": "Second Post"},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+    assert response.status_code == 201
+    post_2 = response.json()
+
+    # Like Post 2
+    await async_client.post(
+        "/like",
+        json={"post_id": post_2["id"]},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+
+    # Post 3
+    response = await async_client.post(
+        "/post",
+        json={"body": "Third Post"},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+    assert response.status_code == 201
+    post_3 = response.json()
+
+    posts = [
+        {**created_post, "likes": 0},
+        {**post_2, "likes": 1},
+        {**post_3, "likes": 0},
+    ]
+
     response = await async_client.get(
         "/post",
         headers={"Authorization": f"Bearer {logged_in_token}"},
-        params={"sort": "newest"},
+        params={"sort": sort_param},
     )
 
     assert response.status_code == 200
-    assert response.json() == [created_post]
-
-
-@pytest.mark.anyio
-async def test_list_all_posts_most_liked(
-    async_client: AsyncClient, created_post: dict, logged_in_token: str
-):
-    response = await async_client.get(
-        "/post",
-        headers={"Authorization": f"Bearer {logged_in_token}"},
-        params={"sort": "most_liked"},
-    )
-
-    assert response.status_code == 200
-    assert response.json() == [created_post]
+    expected = [posts[i] for i in expected_order_idx]
+    assert response.json() == expected
 
 
 @pytest.mark.anyio
