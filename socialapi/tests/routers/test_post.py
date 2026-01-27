@@ -42,7 +42,7 @@ async def test_create_post_invalid_token(async_client: AsyncClient):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid access token."
+    assert response.json()["detail"] == "Invalid token."
 
 
 @pytest.mark.anyio
@@ -56,7 +56,7 @@ async def test_create_post_expired_token(async_client: AsyncClient, created_user
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid access token."
+    assert response.json()["detail"] == "Invalid token."
 
 
 @pytest.mark.anyio

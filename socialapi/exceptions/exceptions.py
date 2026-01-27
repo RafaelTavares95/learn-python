@@ -16,7 +16,7 @@ class UnauthorizedException(HTTPException):
     def __init__(
         self,
         status: int = 401,
-        message: str = "Invalid access token.",
+        message: str = "Invalid token.",
     ):
         self.message = message
         self.status_code = status

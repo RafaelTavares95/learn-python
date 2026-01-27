@@ -17,7 +17,7 @@ from socialapi.models.user import User, UserIn, UserPatch
 logger = logging.getLogger(__name__)
 
 
-async def find_user_by_email(email: str):
+async def find_user_by_email(email: str) -> dict:
     logger.info("Finding user by email", extra={"email": email})
     query = user_table.select().where(user_table.c.email == email)
     result = await database.fetch_one(query)
@@ -25,17 +25,20 @@ async def find_user_by_email(email: str):
         return result
 
 
-async def create_user(user: UserIn):
+async def create_user(user: UserIn) -> User:
     logger.info("Creating a new user")
     data = user.model_dump()
     data["password"] = get_password_hash(data["password"])
+    data.setdefault("confirmed", False)
     query = user_table.insert().values(data)
     id = await database.execute(query)
     logger.debug(f"User created with id={id}", extra={"email": data["email"]})
-    return User(id=id, name=data["name"], email=data["email"])
+    return User(
+        id=id, name=data["name"], email=data["email"], confirmed=data["confirmed"]
+    )
 
 
-async def update_user(user: UserPatch, current_user: User):
+async def update_user(user: UserPatch, current_user: User) -> User:
     logger.info("Update user data")
     data = user.model_dump(exclude_unset=True)
     if "password" in data and data["password"]:
@@ -52,6 +55,7 @@ async def update_user(user: UserPatch, current_user: User):
         id=current_user.id,
         name=data.get("name", current_user.name),
         email=current_user.email,
+        confirmed=current_user.confirmed,
     )
 
 

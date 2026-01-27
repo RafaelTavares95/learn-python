@@ -6,7 +6,6 @@ from socialapi.core.database import database, revoked_token_table
 from socialapi.core.security import (
     DEFAULT_EXPIRE_TIME,
     create_access_token,
-    create_confirmation_token,
     create_refresh_token,
     decode_token,
     verify_password,
@@ -29,16 +28,12 @@ async def autenticate_user(email: str, password: str):
 
 async def user_login(user: UserLogin) -> TokenResponse:
     autenticated_user = await autenticate_user(user.email, user.password)
-    confirmation_token = None
-    if not autenticated_user.confirmed:
-        confirmation_token = create_confirmation_token(autenticated_user.email)
-
     access_token = create_access_token(autenticated_user.email, DEFAULT_EXPIRE_TIME)
     refresh_token = create_refresh_token(autenticated_user.email)
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        confirmation_token=confirmation_token,
+        confirmed_user=autenticated_user.confirmed,
         token_type="bearer",
     )
 
@@ -51,12 +46,12 @@ async def refresh_access_token(refresh: RefreshRequest) -> AccessTokenResponse:
     try:
         decoded = decode_token(refresh.refresh_token)
     except ExpiredSignatureError as e:
-        raise UnauthorizedException() from e
+        raise UnauthorizedException(message="Token expired") from e
     except JWTError as e:
         raise UnauthorizedException() from e
 
     if decoded.get("type") != TokenType.REFRESH:
-        raise UnauthorizedException()
+        raise UnauthorizedException(message="Invalid token type")
 
     email = decoded.get("sub")
     if email is None:
@@ -86,15 +81,19 @@ async def confirm_email_from_token(token: str):
     try:
         decoded = decode_token(token)
     except ExpiredSignatureError as e:
-        raise UnauthorizedException() from e
+        raise UnauthorizedException(message="Token expired") from e
     except JWTError as e:
         raise UnauthorizedException() from e
 
     if decoded.get("type") != TokenType.CONFIRMATION:
-        raise UnauthorizedException()
+        raise UnauthorizedException(message="Invalid token type")
 
     email = decoded.get("sub")
     if email is None:
         raise UnauthorizedException()
 
     await set_user_confirmed(email)
+
+
+async def send_email_confirmation(email: str):
+    pass

@@ -7,6 +7,7 @@ class User(BaseModel):
     id: int | None = None
     name: str
     email: str
+    confirmed: bool = False
 
 
 class UserIn(User):
@@ -22,3 +23,7 @@ class UserLogin(BaseModel):
 class UserPatch(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
+
+
+class UserConfirmation(BaseModel):
+    email: str

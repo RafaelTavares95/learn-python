@@ -1,6 +1,9 @@
 import pytest
 from httpx import AsyncClient
 
+from socialapi.core.security import create_confirmation_token
+from socialapi.service.user import find_user_by_email
+
 
 @pytest.mark.anyio
 async def test_user_login(async_client: AsyncClient, created_user: dict):
@@ -90,26 +93,15 @@ async def test_logout_and_refresh_fail(async_client: AsyncClient, created_user: 
 
 @pytest.mark.anyio
 async def test_confirm_user(async_client: AsyncClient, created_user: dict):
-    # Login to get confirmation token
-    login_response = await async_client.post(
-        "/login",
-        data={"username": created_user["email"], "password": "1234"},
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    confirmation_token = login_response.json()["confirmation_token"]
-    assert confirmation_token is not None
+    user = await find_user_by_email(created_user["email"])
+    confirmation_token = create_confirmation_token(created_user["email"])
 
-    # Confirm user
+    assert user["confirmed"] is False
     response = await async_client.get(f"/confirm/{confirmation_token}")
     assert response.status_code == 200
 
-    # Login again to check if confirmation_token is None
-    login_response_2 = await async_client.post(
-        "/login",
-        data={"username": created_user["email"], "password": "1234"},
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    assert login_response_2.json()["confirmation_token"] is None
+    user = await find_user_by_email(created_user["email"])
+    assert user["confirmed"] is True
 
 
 @pytest.mark.anyio

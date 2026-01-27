@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    confirmation_token: str | None = None
+    confirmed_user: bool = False
     token_type: str
 
 

@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
-from socialapi.models.user import UserLogin
+from socialapi.models.user import UserConfirmation, UserLogin
 from socialapi.service.auth import (
     confirm_email_from_token,
     refresh_access_token,
     revoke_token,
+    send_email_confirmation,
     user_login,
 )
 
@@ -37,3 +38,8 @@ async def logout(refresh: RefreshRequest):
 @router.get("/confirm/{token}")
 async def confirm_user(token: str):
     return await confirm_email_from_token(token)
+
+
+@router.post("/resend-confirmation", status_code=status.HTTP_204_NO_CONTENT)
+async def resend_confirmation(userConfirmation: UserConfirmation):
+    return await send_email_confirmation(userConfirmation.email)
