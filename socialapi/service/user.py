@@ -11,6 +11,7 @@ from socialapi.core.security import (
     oauth2_scheme,
 )
 from socialapi.exceptions.exceptions import UnauthorizedException
+from socialapi.models.enums.token_type import TokenType
 from socialapi.models.user import User, UserIn, UserPatch
 
 logger = logging.getLogger(__name__)
@@ -54,16 +55,31 @@ async def update_user(user: UserPatch, current_user: User):
     )
 
 
+async def set_user_confirmed(email: str):
+    logger.info("Confirming user")
+    query = (
+        user_table.update().where(user_table.c.email == email).values(confirmed=True)
+    )
+    await database.execute(query)
+
+
 async def get_user_from_token(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
     try:
-        email = decode_token(token)
-        if email is None:
-            raise UnauthorizedException()
-        user = await find_user_by_email(email)
-        if user is None:
-            raise UnauthorizedException()
-        return User(**user)
+        decoded = decode_token(token)
     except ExpiredSignatureError as e:
         raise UnauthorizedException() from e
     except JWTError as e:
         raise UnauthorizedException() from e
+
+    if decoded.get("type") != TokenType.ACCESS:
+        raise UnauthorizedException()
+
+    email = decoded.get("sub")
+    if email is None:
+        raise UnauthorizedException()
+
+    user = await find_user_by_email(email)
+    if user is None:
+        raise UnauthorizedException()
+
+    return User(**user)

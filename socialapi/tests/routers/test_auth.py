@@ -86,3 +86,33 @@ async def test_logout_and_refresh_fail(async_client: AsyncClient, created_user: 
     )
 
     assert refresh_response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_confirm_user(async_client: AsyncClient, created_user: dict):
+    # Login to get confirmation token
+    login_response = await async_client.post(
+        "/login",
+        data={"username": created_user["email"], "password": "1234"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    confirmation_token = login_response.json()["confirmation_token"]
+    assert confirmation_token is not None
+
+    # Confirm user
+    response = await async_client.get(f"/confirm/{confirmation_token}")
+    assert response.status_code == 200
+
+    # Login again to check if confirmation_token is None
+    login_response_2 = await async_client.post(
+        "/login",
+        data={"username": created_user["email"], "password": "1234"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert login_response_2.json()["confirmation_token"] is None
+
+
+@pytest.mark.anyio
+async def test_confirm_user_invalid_token(async_client: AsyncClient):
+    response = await async_client.get("/confirm/invalid_token")
+    assert response.status_code == 401

@@ -37,7 +37,7 @@ def test_decode_token():
     email = "teste@test.com"
     token = create_access_token(email=email, expire_in_minutes=30)
     result = decode_token(token)
-    assert result == email
+    assert result.get("sub") == email
 
 
 def test_create_refresh_token():
