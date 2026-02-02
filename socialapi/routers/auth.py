@@ -15,9 +15,9 @@ from socialapi.service.auth import (
     confirm_email_from_token,
     refresh_access_token,
     revoke_token,
-    send_email_confirmation,
     user_login,
 )
+from socialapi.service.user import send_email_confirmation
 
 router = APIRouter()
 
@@ -77,7 +77,8 @@ async def logout(request: Request, response: Response):
 
 @router.get("/confirm/{token}")
 async def confirm_user(token: str):
-    return await confirm_email_from_token(token)
+    await confirm_email_from_token(token)
+    return {"message": "Email confirmed successfully"}
 
 
 @router.post("/resend-confirmation", status_code=status.HTTP_204_NO_CONTENT)

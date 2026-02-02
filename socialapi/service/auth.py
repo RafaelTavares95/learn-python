@@ -10,7 +10,10 @@ from socialapi.core.security import (
     decode_token,
     verify_password,
 )
-from socialapi.exceptions.exceptions import CredentialException, UnauthorizedException
+from socialapi.exceptions.exceptions import (
+    CredentialException,
+    UnauthorizedException,
+)
 from socialapi.models.enums.token_type import TokenType
 from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
 from socialapi.models.user import UserLogin
@@ -93,7 +96,3 @@ async def confirm_email_from_token(token: str):
         raise UnauthorizedException()
 
     await set_user_confirmed(email)
-
-
-async def send_email_confirmation(email: str):
-    pass
