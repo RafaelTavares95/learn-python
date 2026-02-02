@@ -1,9 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
+from socialapi.core.config import config
+from socialapi.exceptions.exceptions import UnauthorizedException
+from socialapi.models.token import (
+    LoginResponse,
+    RefreshRequest,
+    RefreshResponse,
+)
 from socialapi.models.user import UserConfirmation, UserLogin
 from socialapi.service.auth import (
     confirm_email_from_token,
@@ -16,23 +22,57 @@ from socialapi.service.auth import (
 router = APIRouter()
 
 
-@router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    return await user_login(
+@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], response: Response
+):
+    token_response = await user_login(
         UserLogin(email=form_data.username, password=form_data.password)
     )
+    response.set_cookie(
+        key="access_token",
+        value=token_response.access_token,
+        httponly=True,
+        secure=config.COOKIE_SECURE,
+        samesite="lax",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=token_response.refresh_token,
+        httponly=True,
+        secure=config.COOKIE_SECURE,
+        samesite="lax",
+    )
+    return LoginResponse(confirmed_user=token_response.confirmed_user)
 
 
-@router.post(
-    "/refresh", response_model=AccessTokenResponse, status_code=status.HTTP_200_OK
-)
-async def refresh(refresh: RefreshRequest):
-    return await refresh_access_token(refresh)
+@router.post("/refresh", response_model=RefreshResponse, status_code=status.HTTP_200_OK)
+async def refresh(request: Request, response: Response):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise UnauthorizedException(message="Refresh token missing")
+
+    token_response = await refresh_access_token(
+        RefreshRequest(refresh_token=refresh_token)
+    )
+    response.set_cookie(
+        key="access_token",
+        value=token_response.access_token,
+        httponly=True,
+        secure=config.COOKIE_SECURE,
+        samesite="lax",
+    )
+    return RefreshResponse()
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(refresh: RefreshRequest):
-    await revoke_token(refresh.refresh_token)
+async def logout(request: Request, response: Response):
+    refresh_token = request.cookies.get("refresh_token")
+    if refresh_token:
+        await revoke_token(refresh_token)
+
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
 
 
 @router.get("/confirm/{token}")

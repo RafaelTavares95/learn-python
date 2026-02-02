@@ -108,7 +108,7 @@ async def logged_in_token(async_client: AsyncClient, created_user) -> str:
         data={"username": "teste@email.com", "password": "1234"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
-    return response.json()["access_token"]
+    return response.cookies["access_token"]
 
 
 @pytest.fixture()

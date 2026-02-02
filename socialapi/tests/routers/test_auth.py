@@ -14,9 +14,9 @@ async def test_user_login(async_client: AsyncClient, created_user: dict):
     )
 
     assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert "refresh_token" in response.json()
-    assert response.json()["token_type"] == "bearer"
+    assert "access_token" in response.cookies
+    assert "refresh_token" in response.cookies
+    assert response.json()["confirmed_user"] is False
 
 
 @pytest.mark.anyio
@@ -37,22 +37,19 @@ async def test_user_login_fail(async_client: AsyncClient, created_user: dict):
 @pytest.mark.anyio
 async def test_refresh_token(async_client: AsyncClient, created_user: dict):
     # Login to get refresh token
-    login_response = await async_client.post(
+    await async_client.post(
         "/login",
         data={"username": created_user["email"], "password": "1234"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
-    refresh_token = login_response.json()["refresh_token"]
+    assert "refresh_token" in async_client.cookies
 
     # Refresh access token
-    refresh_response = await async_client.post(
-        "/refresh",
-        json={"refresh_token": refresh_token},
-    )
+    refresh_response = await async_client.post("/refresh")
 
     assert refresh_response.status_code == 200
-    assert "access_token" in refresh_response.json()
-    assert refresh_response.json()["token_type"] == "bearer"
+    assert "access_token" in async_client.cookies
+    assert refresh_response.json()["status"] == "ok"
 
 
 @pytest.mark.anyio
@@ -68,25 +65,21 @@ async def test_refresh_token_invalid(async_client: AsyncClient):
 @pytest.mark.anyio
 async def test_logout_and_refresh_fail(async_client: AsyncClient, created_user: dict):
     # Login to get refresh token
-    login_response = await async_client.post(
+    await async_client.post(
         "/login",
         data={"username": created_user["email"], "password": "1234"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
-    refresh_token = login_response.json()["refresh_token"]
+    assert "refresh_token" in async_client.cookies
 
     # Logout
-    logout_response = await async_client.post(
-        "/logout",
-        json={"refresh_token": refresh_token},
-    )
+    logout_response = await async_client.post("/logout")
     assert logout_response.status_code == 204
+    assert "access_token" not in async_client.cookies
+    assert "refresh_token" not in async_client.cookies
 
-    # Try to refresh access token using the revoked refresh token
-    refresh_response = await async_client.post(
-        "/refresh",
-        json={"refresh_token": refresh_token},
-    )
+    # Try to refresh access token (cookies should be gone)
+    refresh_response = await async_client.post("/refresh")
 
     assert refresh_response.status_code == 401
 

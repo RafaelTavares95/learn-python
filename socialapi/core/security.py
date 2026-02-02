@@ -2,6 +2,7 @@ import datetime
 import logging
 from typing import Any
 
+from fastapi import Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from passlib.context import CryptContext
@@ -17,7 +18,16 @@ DEFAULT_EXPIRE_TIME = 30
 REFRESH_EXPIRE_DAYS = 1440 * 7  # 7 days
 CONFIRMATION_EXPIRE_DAYS = 1440  # 1 day
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> str | None:
+        token = request.cookies.get("access_token")
+        if not token:
+            return await super().__call__(request)
+        return token
+
+
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="login")
 
 
 def create_jwt_token(
