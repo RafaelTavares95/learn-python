@@ -96,17 +96,24 @@ async def get_user_from_token(token: Annotated[str, Depends(oauth2_scheme)]) -> 
 
 
 async def create_confirmation_url(email: str):
-    return f"http://localhost:8000/confirm/{create_confirmation_token(email)}"
+    return f"{config.FRONTEND_URL}/confirm-email/{create_confirmation_token(email)}"
 
 
 async def send_email_confirmation(email: str):
+    user = await find_user_by_email(email)
+    if user is None:
+        raise UnauthorizedException(message="User not found")
+
+    if user.confirmed:
+        raise UnauthorizedException(message="User is already confirmed")
+
     confirmation_url = await create_confirmation_url(email)
     try:
         await send_email(
             email,
             "Confirm your email",
             (
-                f"Hello, {email}!\n\n"
+                f"Hello, {user.name}!\n\n"
                 f"Confirm your email by clicking the link below: {confirmation_url}\n\n"
                 f"If you did not create this account, please ignore this email.\n\n"
                 f"Best regards,\n"
@@ -116,7 +123,7 @@ async def send_email_confirmation(email: str):
                 f"<html>"
                 f"<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
                 f"<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;'>"
-                f"<h2 style='color: #4A90E2;'>Hello, {email}!</h2>"
+                f"<h2 style='color: #4A90E2;'>Hello, {user.name}!</h2>"
                 f"<p>Thank you for signing up! Please confirm your email address to activate your account.</p>"
                 f"<div style='margin: 30px 0;'>"
                 f"<a href='{confirmation_url}' style='background-color: #4A90E2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;'>Confirm Email Address</a>"
