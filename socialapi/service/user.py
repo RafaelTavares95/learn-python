@@ -8,6 +8,7 @@ from socialapi.core.config import config
 from socialapi.core.database import database, user_table
 from socialapi.core.security import (
     create_confirmation_token,
+    create_password_reset_token,
     decode_token,
     get_password_hash,
     oauth2_scheme,
@@ -96,7 +97,7 @@ async def get_user_from_token(token: Annotated[str, Depends(oauth2_scheme)]) -> 
 
 
 async def create_confirmation_url(email: str):
-    return f"{config.FRONTEND_URL}/confirm-email/{create_confirmation_token(email)}"
+    return f"{config.FRONT_URL}/confirm-email/{create_confirmation_token(email)}"
 
 
 async def send_email_confirmation(email: str):
@@ -140,3 +141,51 @@ async def send_email_confirmation(email: str):
         )
     except MailResponseException as e:
         logger.error(f"Error sending email: {e}")
+
+
+async def create_password_reset_url(email: str):
+    return f"{config.FRONT_URL}/reset-password/{create_password_reset_token(email)}"
+
+
+async def send_password_reset_email(email: str):
+    user = await find_user_by_email(email)
+    if user is None:
+        logger.warning(f"Password reset requested for non-existent email: {email}")
+        return  # Security best practice: don't reveal if email exists
+
+    reset_url = await create_password_reset_url(email)
+    try:
+        await send_email(
+            email,
+            "Resete sua senha",
+            (
+                f"Olá, {user['name']}!\n\n"
+                f"Você solicitou a recuperação de sua senha. Clique no link abaixo para criar uma nova senha:\n"
+                f"{reset_url}\n\n"
+                f"Este link expira em 15 minutos.\n\n"
+                f"Se você não solicitou isso, por favor ignore este e-mail.\n\n"
+                f"Atenciosamente,\n"
+                f"{config.APP_NAME}"
+            ),
+            html=(
+                f"<html>"
+                f"<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                f"<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;'>"
+                f"<h2 style='color: #4A90E2;'>Olá, {user['name']}!</h2>"
+                f"<p>Você solicitou a recuperação de sua senha. Clique no botão abaixo para resetar sua senha:</p>"
+                f"<div style='margin: 30px 0;'>"
+                f"<a href='{reset_url}' style='background-color: #4A90E2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;'>Resetar Senha</a>"
+                f"</div>"
+                f"<p style='font-size: 0.9em; color: #666;'>Este link expira em 15 minutos.</p>"
+                f"<p style='font-size: 0.9em; color: #666;'>Se o botão acima não funcionar, copie e cole este link no seu navegador:</p>"
+                f"<p style='font-size: 0.9em; color: #666;'>{reset_url}</p>"
+                f"<hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'>"
+                f"<p>Se você não solicitou isso, por favor ignore este e-mail.</p>"
+                f"<p>Atenciosamente,<br><strong>Equipe {config.APP_NAME}</strong></p>"
+                f"</div>"
+                f"</body>"
+                f"</html>"
+            ),
+        )
+    except MailResponseException as e:
+        logger.error(f"Error sending password reset email: {e}")

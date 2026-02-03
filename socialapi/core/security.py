@@ -52,6 +52,10 @@ def create_confirmation_token(email: str) -> str:
     return create_jwt_token(email, TokenType.CONFIRMATION, CONFIRMATION_EXPIRE_DAYS)
 
 
+def create_password_reset_token(email: str) -> str:
+    return create_jwt_token(email, TokenType.RESET_PASSWORD, 15)
+
+
 def decode_token(token: str) -> dict[str, Any]:
     decoded = jwt.decode(token=token, key=config.JWT_SECRET_KEY, algorithms=[ALGORITHM])
     return decoded

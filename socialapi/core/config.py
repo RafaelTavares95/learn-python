@@ -13,7 +13,7 @@ class BaseConfig(BaseSettings):
 
 class GlobalConfig(BaseConfig):
     APP_NAME: Optional[str] = None
-    FRONTEND_URL: Optional[str] = None
+    FRONT_URL: Optional[str] = None
     DATABASE_URL: Optional[str] = None
     DB_FORCE_ROLL_BACK: bool = False
     LOGTAIL_API_KEY: Optional[str] = None

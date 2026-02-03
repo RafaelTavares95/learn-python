@@ -27,3 +27,7 @@ class UserPatch(BaseModel):
 
 class UserConfirmation(BaseModel):
     email: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
