@@ -16,8 +16,8 @@ from socialapi.exceptions.exceptions import (
 )
 from socialapi.models.enums.token_type import TokenType
 from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
-from socialapi.models.user import UserLogin
-from socialapi.service.user import find_user_by_email, set_user_confirmed
+from socialapi.models.user import PasswordReset, User, UserLogin, UserPatch
+from socialapi.service.user import find_user_by_email, set_user_confirmed, update_user
 
 logger = logging.getLogger(__name__)
 
@@ -41,24 +41,30 @@ async def user_login(user: UserLogin) -> TokenResponse:
     )
 
 
-async def refresh_access_token(refresh: RefreshRequest) -> AccessTokenResponse:
-    if await is_token_revoked(refresh.refresh_token):
-        logger.warning(f"Refresh token is revoked: {refresh.refresh_token}")
-        raise UnauthorizedException()
-
+def _validate_token(token: str, expected_type: TokenType) -> str:
     try:
-        decoded = decode_token(refresh.refresh_token)
+        decoded = decode_token(token)
     except ExpiredSignatureError as e:
         raise UnauthorizedException(message="Token expired") from e
     except JWTError as e:
         raise UnauthorizedException() from e
 
-    if decoded.get("type") != TokenType.REFRESH:
+    if decoded.get("type") != expected_type:
         raise UnauthorizedException(message="Invalid token type")
 
     email = decoded.get("sub")
     if email is None:
         raise UnauthorizedException()
+
+    return email
+
+
+async def refresh_access_token(refresh: RefreshRequest) -> AccessTokenResponse:
+    if await is_token_revoked(refresh.refresh_token):
+        logger.warning(f"Refresh token is revoked: {refresh.refresh_token}")
+        raise UnauthorizedException()
+
+    email = _validate_token(refresh.refresh_token, TokenType.REFRESH)
 
     user = await find_user_by_email(email)
     if user is None:
@@ -81,18 +87,26 @@ async def is_token_revoked(token: str):
 
 
 async def confirm_email_from_token(token: str):
-    try:
-        decoded = decode_token(token)
-    except ExpiredSignatureError as e:
-        raise UnauthorizedException(message="Token expired") from e
-    except JWTError as e:
-        raise UnauthorizedException() from e
+    email = _validate_token(token, TokenType.CONFIRMATION)
+    await set_user_confirmed(email)
 
-    if decoded.get("type") != TokenType.CONFIRMATION:
-        raise UnauthorizedException(message="Invalid token type")
 
-    email = decoded.get("sub")
-    if email is None:
+async def reset_password_from_token(reset_data: PasswordReset):
+    email = _validate_token(reset_data.token, TokenType.RESET_PASSWORD)
+
+    user_dict = await find_user_by_email(email)
+    if user_dict is None:
         raise UnauthorizedException()
 
-    await set_user_confirmed(email)
+    user = User(**user_dict)
+    await update_user(UserPatch(password=reset_data.new_password), user)
+
+
+async def verify_reset_password_token(token: str):
+    email = _validate_token(token, TokenType.RESET_PASSWORD)
+
+    user = await find_user_by_email(email)
+    if user is None:
+        raise UnauthorizedException()
+
+    return email

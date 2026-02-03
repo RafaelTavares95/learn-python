@@ -10,12 +10,19 @@ from socialapi.models.token import (
     RefreshRequest,
     RefreshResponse,
 )
-from socialapi.models.user import PasswordResetRequest, UserConfirmation, UserLogin
+from socialapi.models.user import (
+    PasswordReset,
+    PasswordResetRequest,
+    UserConfirmation,
+    UserLogin,
+)
 from socialapi.service.auth import (
     confirm_email_from_token,
     refresh_access_token,
+    reset_password_from_token,
     revoke_token,
     user_login,
+    verify_reset_password_token,
 )
 from socialapi.service.user import (
     send_email_confirmation,
@@ -92,3 +99,14 @@ async def resend_confirmation(userConfirmation: UserConfirmation):
 @router.post("/password-reset-request", status_code=status.HTTP_204_NO_CONTENT)
 async def password_reset_request(reset_request: PasswordResetRequest):
     await send_password_reset_email(reset_request.email)
+
+
+@router.post("/password-reset", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset(reset_data: PasswordReset):
+    await reset_password_from_token(reset_data)
+
+
+@router.get("/password-reset-verify/{token}", status_code=status.HTTP_200_OK)
+async def password_reset_verify(token: str):
+    email = await verify_reset_password_token(token)
+    return {"email": email}

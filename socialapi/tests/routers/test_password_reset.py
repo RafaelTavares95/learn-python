@@ -59,3 +59,78 @@ async def test_password_reset_request_non_existent_email(
     assert response.status_code == 204
     # But email should NOT be sent (or at least our current logic doesn't send it)
     assert not mock_send_email.called
+
+
+@pytest.mark.anyio
+async def test_password_reset_success(
+    async_client: AsyncClient, mock_send_email: AsyncMock, created_user: dict
+):
+    # 1. Request password reset to get the token
+    email = created_user["email"]
+    await async_client.post("/password-reset-request", json={"email": email})
+
+    args, _ = mock_send_email.call_args
+    body = args[2]
+    match = re.search(r"reset-password/([a-zA-Z0-9\._\-]+)", body)
+    token = match.group(1)
+
+    # 2. Reset password using the token
+    new_password = "newsecurepassword123"
+    response = await async_client.post(
+        "/password-reset", json={"token": token, "new_password": new_password}
+    )
+    assert response.status_code == 204
+
+    # 3. Try to login with the new password
+    # Note: the login route expects form data
+    login_response = await async_client.post(
+        "/login", data={"username": email, "password": new_password}
+    )
+    assert login_response.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_password_reset_invalid_token(async_client: AsyncClient):
+    response = await async_client.post(
+        "/password-reset",
+        json={"token": "invalid_token_here", "new_password": "somepassword"},
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_password_reset_verify_success(
+    async_client: AsyncClient, mock_send_email: AsyncMock, created_user: dict
+):
+    # 1. Request password reset to get the token
+    email = created_user["email"]
+    await async_client.post("/password-reset-request", json={"email": email})
+
+    args, _ = mock_send_email.call_args
+    body = args[2]
+    match = re.search(r"reset-password/([a-zA-Z0-9\._\-]+)", body)
+    token = match.group(1)
+
+    # 2. Verify the token
+    response = await async_client.get(f"/password-reset-verify/{token}")
+    assert response.status_code == 200
+    assert response.json() == {"email": email}
+
+
+@pytest.mark.anyio
+async def test_password_reset_verify_invalid(async_client: AsyncClient):
+    response = await async_client.get("/password-reset-verify/invalid_token")
+    assert response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_password_reset_verify_wrong_token_type(
+    async_client: AsyncClient, created_user: dict
+):
+    from socialapi.core.security import create_access_token
+
+    token = create_access_token(created_user["email"], 30)
+
+    response = await async_client.get(f"/password-reset-verify/{token}")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid token type"
