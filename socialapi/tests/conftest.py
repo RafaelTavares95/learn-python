@@ -1,5 +1,6 @@
 import os
 from typing import AsyncGenerator, Generator
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,6 +18,12 @@ from socialapi.main import app
 @pytest.fixture(scope="session")
 def anyio_backend():
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def mock_send_email():
+    with patch("socialapi.service.user.send_email", new_callable=AsyncMock) as mock:
+        yield mock
 
 
 # Create a TestClient
