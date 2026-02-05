@@ -1,28 +1,37 @@
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class User(BaseModel):
+    """Entidade principal do usuário. Contém todos os campos do banco."""
+
     id: int | None = None
     name: str
     email: str
+    password: str | None = Field(default=None, exclude=True)
     confirmed: bool = False
-
-
-class UserIn(User):
-    password: str
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserLogin(BaseModel):
+class UserCreate(BaseModel):
+    """DTO para criação de usuário via API."""
+
+    name: str
     email: str
     password: str
 
 
 class UserPatch(BaseModel):
+    """DTO para atualização parcial de usuário."""
+
     name: Optional[str] = None
     password: Optional[str] = None
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
 
 
 class UserConfirmation(BaseModel):

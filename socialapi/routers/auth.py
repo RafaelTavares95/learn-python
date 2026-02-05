@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from socialapi.core.config import config
@@ -24,10 +24,8 @@ from socialapi.service.auth import (
     user_login,
     verify_reset_password_token,
 )
-from socialapi.service.user import (
-    send_email_confirmation,
-    send_password_reset_email,
-)
+from socialapi.service.email import send_confirmation_email, send_password_reset_email
+from socialapi.service.user import get_user_by_email, get_user_for_resend_confirmation
 
 router = APIRouter()
 
@@ -92,13 +90,20 @@ async def confirm_user(token: str):
 
 
 @router.post("/resend-confirmation", status_code=status.HTTP_204_NO_CONTENT)
-async def resend_confirmation(userConfirmation: UserConfirmation):
-    return await send_email_confirmation(userConfirmation.email)
+async def resend_confirmation(
+    userConfirmation: UserConfirmation, background_tasks: BackgroundTasks
+):
+    user = await get_user_for_resend_confirmation(userConfirmation.email)
+    send_confirmation_email(user, background_tasks)
 
 
 @router.post("/password-reset-request", status_code=status.HTTP_204_NO_CONTENT)
-async def password_reset_request(reset_request: PasswordResetRequest):
-    await send_password_reset_email(reset_request.email)
+async def password_reset_request(
+    reset_request: PasswordResetRequest, background_tasks: BackgroundTasks
+):
+    user = await get_user_by_email(reset_request.email)
+    if user:
+        send_password_reset_email(user, background_tasks)
 
 
 @router.post("/password-reset", status_code=status.HTTP_204_NO_CONTENT)

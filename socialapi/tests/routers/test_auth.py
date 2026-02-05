@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient
 
 from socialapi.core.security import create_confirmation_token
-from socialapi.service.user import find_user_by_email
+from socialapi.service.user import get_user_by_email
 
 
 @pytest.mark.anyio
@@ -86,15 +86,15 @@ async def test_logout_and_refresh_fail(async_client: AsyncClient, created_user: 
 
 @pytest.mark.anyio
 async def test_confirm_user(async_client: AsyncClient, created_user: dict):
-    user = await find_user_by_email(created_user["email"])
+    user = await get_user_by_email(created_user["email"])
     confirmation_token = create_confirmation_token(created_user["email"])
 
-    assert user["confirmed"] is False
+    assert user.confirmed is False
     response = await async_client.get(f"/confirm/{confirmation_token}")
     assert response.status_code == 200
 
-    user = await find_user_by_email(created_user["email"])
-    assert user["confirmed"] is True
+    user = await get_user_by_email(created_user["email"])
+    assert user.confirmed is True
 
 
 @pytest.mark.anyio

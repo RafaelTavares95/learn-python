@@ -16,27 +16,31 @@ from socialapi.exceptions.exceptions import (
 )
 from socialapi.models.enums.token_type import TokenType
 from socialapi.models.token import AccessTokenResponse, RefreshRequest, TokenResponse
-from socialapi.models.user import PasswordReset, User, UserLogin, UserPatch
-from socialapi.service.user import find_user_by_email, set_user_confirmed, update_user
+from socialapi.models.user import PasswordReset, UserLogin, UserPatch
+from socialapi.service.user import (
+    get_user_by_email,
+    set_user_confirmed,
+    update_user,
+)
 
 logger = logging.getLogger(__name__)
 
 
 async def autenticate_user(email: str, password: str):
-    user = await find_user_by_email(email)
+    user = await get_user_by_email(email)
     if not user or not verify_password(password, user.password):
         raise CredentialException()
     return user
 
 
 async def user_login(user: UserLogin) -> TokenResponse:
-    autenticated_user = await autenticate_user(user.email, user.password)
-    access_token = create_access_token(autenticated_user.email, DEFAULT_EXPIRE_TIME)
-    refresh_token = create_refresh_token(autenticated_user.email)
+    authenticated_user = await autenticate_user(user.email, user.password)
+    access_token = create_access_token(authenticated_user.email, DEFAULT_EXPIRE_TIME)
+    refresh_token = create_refresh_token(authenticated_user.email)
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        confirmed_user=autenticated_user.confirmed,
+        confirmed_user=authenticated_user.confirmed,
         token_type="bearer",
     )
 
@@ -53,7 +57,7 @@ def _validate_token(token: str, expected_type: TokenType) -> str:
         raise UnauthorizedException(message="Invalid token type")
 
     email = decoded.get("sub")
-    if email is None:
+    if not email:
         raise UnauthorizedException()
 
     return email
@@ -61,13 +65,11 @@ def _validate_token(token: str, expected_type: TokenType) -> str:
 
 async def refresh_access_token(refresh: RefreshRequest) -> AccessTokenResponse:
     if await is_token_revoked(refresh.refresh_token):
-        logger.warning(f"Refresh token is revoked: {refresh.refresh_token}")
         raise UnauthorizedException()
 
     email = _validate_token(refresh.refresh_token, TokenType.REFRESH)
-
-    user = await find_user_by_email(email)
-    if user is None:
+    user = await get_user_by_email(email)
+    if not user:
         raise UnauthorizedException()
 
     access_token = create_access_token(user.email, DEFAULT_EXPIRE_TIME)
@@ -75,7 +77,6 @@ async def refresh_access_token(refresh: RefreshRequest) -> AccessTokenResponse:
 
 
 async def revoke_token(token: str):
-    logger.info("Revoking token")
     query = revoked_token_table.insert().values(token=token)
     await database.execute(query)
 
@@ -93,20 +94,16 @@ async def confirm_email_from_token(token: str):
 
 async def reset_password_from_token(reset_data: PasswordReset):
     email = _validate_token(reset_data.token, TokenType.RESET_PASSWORD)
-
-    user_dict = await find_user_by_email(email)
-    if user_dict is None:
+    user = await get_user_by_email(email)
+    if not user:
         raise UnauthorizedException()
 
-    user = User(**user_dict)
     await update_user(UserPatch(password=reset_data.new_password), user)
 
 
 async def verify_reset_password_token(token: str):
     email = _validate_token(token, TokenType.RESET_PASSWORD)
-
-    user = await find_user_by_email(email)
-    if user is None:
+    user = await get_user_by_email(email)
+    if not user:
         raise UnauthorizedException()
-
     return email

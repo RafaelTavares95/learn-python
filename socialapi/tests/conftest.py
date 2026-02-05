@@ -22,7 +22,7 @@ def anyio_backend():
 
 @pytest.fixture(autouse=True)
 def mock_send_email():
-    with patch("socialapi.service.user.send_email", new_callable=AsyncMock) as mock:
+    with patch("socialapi.service.email.send_email", new_callable=AsyncMock) as mock:
         yield mock
 
 
